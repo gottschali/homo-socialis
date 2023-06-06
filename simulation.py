@@ -27,8 +27,6 @@ class Strategy(Enum):
 # - Keep History in some other way
 
 class Simulation:
-    def grid(self, value): 
-        return [value for _ in range(self.N)]
 
     def __init__(self, 
                  graph: nx.Graph,
