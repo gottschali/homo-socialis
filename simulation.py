@@ -1,137 +1,152 @@
 from enum import Enum
 import random
+import networkx as nx
+import typing
+
+Probability = float # in interval [0, 1]
 
 class Strategy(Enum):
     cooperate = 0
     defect = 1
 
-# Idea: Immutable State object
-# Idea: Linearize matrices to vectors 
-# - can abstract for different structures by defining different neighborhoods
-# - just index with player id like in the math formulas
-# Instead of matrices keep player objects?
+# TODO
+# - Empty sites
+#   The parameter occupation_frac specifies how many sites are occupied
+#   We use a boolean array track this.
+#   With the graph abstraction I think we could eliminate this
+#   Now we have to always test whether neighbors are occupied
+#   (if they are not they should just be zero? )
+#   (but then for the average formula should they be counted in)
+# - Understand how reproduction should work
+
+# TODO Need to keep track of stats
+# Either
+# - use Immutable State object
+#   Every simulation step produces a new SimulationState and we can keep a list of them
+# - Provide a way to hook in stats functions to record values and maybe plot them afterwards
+# - Keep History in some other way
+
 class Simulation:
     def grid(self, value): 
-        return [[value for w in range(self.width)] for h in range(self.height)]
+        return [value for _ in range(self.N)]
 
-    def __init__(self, width=50, height=50, occupation_frac=0.6, probability_of_death = 0.05, initial_friendliness=0.0,
-                 local_reroduction=0.9,
-                 mutation=0.2,
-                 temptation=1.1,
-                 reward=1,
-                 punishment=0,
-                 sucker=-1,
+    def __init__(self, 
+                 graph: nx.Graph,
+                 occupation_frac: Probability = 0.6,
+                 p_death: Probability = 0.05,
+                 initial_friendliness=0.0,
+                 local_reproduction=0.9,
+                 mutation: Probability = 0.2,
+                 temptation = 1.1,
+                 reward = 1,
+                 punishment = 0,
+                 sucker = -1,
                  ):
-        self.width = width
-        self.height = height
+        # Assume node ids are (0, 1, ..., N-1)
+        self.graph = graph
+        self.N = len(graph.nodes)
         # For player i: index with player i's strategy followed by strategy of an interacting players strategy
-        self.payoff_matrix = ((reward, punishment),
-                              (temptation, sucker))
-
-        self.occupation_frac = occupation_frac
-        self.probability_of_death = probability_of_death
-        self.initial_friendliness = initial_friendliness
-
-        self.local_reroduction = local_reroduction
-        self.mutation = mutation
-        # WIDTH x HEIGHT rectangular lattice
+        self.payoff_matrix = {
+                                Strategy.cooperate: {
+                                    Strategy.cooperate: reward,
+                                    Strategy.defect: punishment,
+                                },
+                                Strategy.defect: {
+                                    Strategy.cooperate: temptation,
+                                    Strategy.defect: sucker,
+                                },
+                           }
+        # Strict Prisoner's Dilemma
         assert temptation > reward
         assert reward > punishment
         assert punishment > sucker
 
-        self.occupied = self.grid(0)
-        for row in self.occupied:
-            for i in range(len(row)):
-                row[i] = int(random.random() < self.occupation_frac)
-        self.friendliness = self.grid(initial_friendliness)
-        self.strategies = self.grid(Strategy.defect)
-        self.payoff = self.grid(0)
+        self.occupation_frac = occupation_frac
+        self.probability_of_death = p_death
+        self.initial_friendliness = initial_friendliness
+        self.local_reproduction = local_reproduction
+        self.mutation = mutation
 
+        # TODO Is it possible to store these attributes directly in the nx.Graph ?
+        # The current model just uses node ids to index these lists
+        # For some graphs from networkx this may not directly work as the nodes could be e.g. tuples
+        self.occupied = [int(random.random() < self.occupation_frac) for _ in range(self.N)]
+        self.friendliness = [initial_friendliness for _ in range(self.N)]
+        self.payoff = [0 for _ in range(self.N)]
+        self.strategies = [Strategy.defect for _ in range(self.N)]
 
-    def neighbors(self, grid, x, y):
-        """ Returns list of Moore neighborhood with periodic boundary condition
-            That are occupied
-        """
-        return [grid[(y+i)%self.width][(x+j)%self.height]
-                for i in (-1,0,1) for j in (-1,0,1) if i !=j and self.occupied[y][x]]
-
-
-    def fitness(self, i, j):
+    def fitness(self, v):
         """ 
         Sum of all payoffs from interactions with neighbors
         minus 8|S| to ensure non-negative payoffs and avoid
         the reproduction of agents who are exploited by all their neibhors
         """
-        sucker = self.payoff_matrix[1][1]
-        return sum(self.neighbors(self.payoff, i, j)) - 8 * sucker
+        # TODO this is super wrong
+        # likt this we sum up all neighbor payoffs
+        sucker = self.payoff_matrix[Strategy.defect][Strategy.defect]
+        return sum(self.payoff[u] for u in self.graph[v]) - 8 * sucker
 
-    def choose_strategy(self, x, y):
+    def choose_strategy(self, v):
         # Maximize utility[i] = (1-friendliness[i]) * own_payoff + friendliness[i] *  avg(neighbor_payoff)
         # utility[i | own_strategy=defect], utility[i | own_strategy=cooperate]
         # Myopic Best Response Rule
         # https://en.wikipedia.org/wiki/Best_response
         # Taking other player strats as given
         # All 2^8 strategies or can we use symmetry
-        friendliness = self.friendliness[y][x]
+        friendliness = self.friendliness[v]
         best_strat = Strategy.defect
         running_utility = -1e10
+        # TODO Would be nice to simplify this code
         for strat in Strategy:
-            num_neighbors = len(self.neighbors(self.occupied, x, y))
+            num_neighbors = len(self.graph[v])
             for cooperating_neighbors in range(0, num_neighbors + 1):
                 defecting_neighbors = num_neighbors - cooperating_neighbors
-                own_payoff = self.payoff_matrix[strat.value][Strategy.cooperate.value] * cooperating_neighbors
-                neighbor_payoff = self.payoff_matrix[Strategy.cooperate.value][strat.value] * cooperating_neighbors
-                own_payoff += self.payoff_matrix[strat.value][Strategy.defect.value] * defecting_neighbors
-                neighbor_payoff += self.payoff_matrix[Strategy.defect.value][strat.value] * defecting_neighbors
+                own_payoff = self.payoff_matrix[strat][Strategy.cooperate] * cooperating_neighbors
+                neighbor_payoff = self.payoff_matrix[Strategy.cooperate][strat] * cooperating_neighbors
+                own_payoff += self.payoff_matrix[strat][Strategy.defect] * defecting_neighbors
+                neighbor_payoff += self.payoff_matrix[Strategy.defect][strat] * defecting_neighbors
                 avg_neighbor_payoff = neighbor_payoff / num_neighbors
                 utility = (1-friendliness) * own_payoff + friendliness *  avg_neighbor_payoff
                 if utility >= running_utility:
                     running_utility = utility
                     best_strat = strat
-        self.strategies[y][x] = best_strat
+        self.strategies[v] = best_strat
                 
 
 
     def step(self):
         """ Perform one simulation step """
         # (always for every player)
-        for y in range(self.height):
-            for x in range(self.width):
-                if not self.occupied[y][x]: continue
-                self.choose_strategy(x, y)
+        for v in self.graph:
+            if not self.occupied[v]: continue
+            self.choose_strategy(v)
 
         # Update payoff (sum (for each neighbor based on interaction))
-        # TODO this is not suited for a one liner
-        for y in range(self.height):
-            for x in range(self.width):
-                if not self.occupied[y][x]: continue
-                self.choose_strategy(x, y)
-                own_strat = self.strategies[y][x].value
-                self.payoff[y][x] = sum(self.payoff_matrix[own_strat][ns.value] for ns in self.neighbors(self.strategies, x, y))
+        for v in self.graph:
+            if not self.occupied[v]: continue
+            self.choose_strategy(v)
+            own_strat = self.strategies[v]
+            self.payoff[v] = sum(self.payoff_matrix[own_strat][self.strategies[u]] for u in self.graph[v] if self.occupied[u])
 
+        ####################################################
+        # TODO Reproduction & Mutation not yet working
         # Update reproductive fitness
-        reproductive_fitness = [[self.fitness(i, j) for j in range(self.width)] for i in range(self.height)]
-        # Let individuals die
+        reproductive_fitness = [self.fitness(v) for v in self.graph]
 
+        # Let some individuals die
         dead_sites = []
-        for y in range(self.height):
-            for x in range(self.width):
-                if not self.occupied[y][x]: continue
-                if random.random() < self.probability_of_death:
-                    self.occupied[y][x] = 0
-                    dead_sites.append((x, y))
+        for v in self.graph:
+            if not self.occupied[v]: continue
+            if random.random() < self.probability_of_death:
+                self.occupied[v] = 0
+                dead_sites.append(v)
 
 
         # all individuals that die are replaced by an offspring of surving to ensure constant population size
 
         # Reproduce
         # Friendliness of offsprings mutate
-        empty_sites = [(x, y) for y in range(self.height) for x in range(self.width) if not self.occupied[y][x]]
-
-        for site in dead_sites:
-
-            new_site = random.choice(self.neighbors(self.grid, x, y) if random.random() < self.local_reroduction else empty_sites)
-            friendliness = random.random() * parent_friendliness if random.random() < 0.8 else friendliness_of_parent + (random.random() / (1-friendliness_of_parent))
+        empty_sites = [v for v in self.graph if not self.occupied[v]]
 
         # produce offspring proportionally to payoff in last round (according to fitness I guess)
         # offspring move to closest empty site (probability v local reproduction)
@@ -140,4 +155,9 @@ class Simulation:
         # with mu = 0.05 it mutates
         #  0.8 reset to uniform random [0, friendliness_of_parent]
         #  0.2  uniform random [friendliness_of_parent, 1]
+
+        # for site in dead_sites:
+            # new_site = random.choice(self.neighbors(self.grid, x, y) if random.random() < self.local_reproduction else empty_sites)
+            # friendliness = random.random() * parent_friendliness if random.random() < 0.8 else friendliness_of_parent + (random.random() / (1-friendliness_of_parent))
+
 
