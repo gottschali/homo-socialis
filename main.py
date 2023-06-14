@@ -27,7 +27,7 @@ def plot_matrix(ax: plt.axis, arr, **kwargs):
             c = matrix[j,i]
             ax.text(i, j, str(c), va='center', ha='center')
 
-def rectangular_graph(m, n,) -> nx.Graph:
+def rectangular_graph(n, m) -> nx.Graph:
     """
     Creates a m x n graph where every node is connected to its 8 nearest neighbors.
     Periodic bounary condition (wrap around -> torus)
@@ -35,12 +35,12 @@ def rectangular_graph(m, n,) -> nx.Graph:
     G = nx.Graph()
     for y in range(m):
         for x in range(n):
+            u = y * n + x
             for i in (-1,0,1):
                 for j in (-1,0,1):
                     # Sorry for the deep nesting :)
-                    if i ==j: continue
-                    u = y * m + x
-                    v = ((y+i)%m) * m + ((x+j) % n)
+                    if (i == 0 and j == 0): continue
+                    v = ((y+j)%m) * n + ((x+i) % n)
                     G.add_edge(u, v)
     return G
 
