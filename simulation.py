@@ -80,7 +80,7 @@ class Simulation:
         the reproduction of agents who are exploited by all their neighbors
         """
         sucker = self.payoff_matrix[Strategy.cooperate][Strategy.defect]
-        return sum(self.payoff[u] for u in self.graph[v]) - 8 * sucker
+        return sum(self.payoff[u] for u in self.graph[v] if self.occupied[u]) - 8 * sucker
 
     def choose_strategy(self, v):
         # Maximize utility[i] = (1-friendliness[i]) * own_payoff + friendliness[i] *  avg(neighbor_payoff)
