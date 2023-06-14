@@ -47,11 +47,11 @@ class Simulation:
         self.payoff_matrix = {
                                 Strategy.cooperate: {
                                     Strategy.cooperate: reward,
-                                    Strategy.defect: punishment,
+                                    Strategy.defect: sucker,
                                 },
                                 Strategy.defect: {
                                     Strategy.cooperate: temptation,
-                                    Strategy.defect: sucker,
+                                    Strategy.defect: punishment,
                                 },
                            }
         # Strict Prisoner's Dilemma
@@ -77,11 +77,9 @@ class Simulation:
         """ 
         Sum of all payoffs from interactions with neighbors
         minus 8|S| to ensure non-negative payoffs and avoid
-        the reproduction of agents who are exploited by all their neibhors
+        the reproduction of agents who are exploited by all their neighbors
         """
-        # TODO this is super wrong
-        # likt this we sum up all neighbor payoffs
-        sucker = self.payoff_matrix[Strategy.defect][Strategy.defect]
+        sucker = self.payoff_matrix[Strategy.cooperate][Strategy.defect]
         return sum(self.payoff[u] for u in self.graph[v]) - 8 * sucker
 
     def choose_strategy(self, v):
