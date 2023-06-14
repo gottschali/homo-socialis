@@ -1,20 +1,25 @@
 from simulation import Simulation
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as col
 import networkx as nx
 
 def show_simul(sim: Simulation, axs):
-    axs[0,0].set_title("Payoff")
     plot_matrix(axs[0, 0], sim.payoff, vmin=0, vmax=10)
-    axs[0,1].set_title("Friendliness")
+    axs[0,0].set_title("Payoff")
     plot_matrix(axs[0, 1], sim.friendliness, vmin=0, vmax=1)
-    strats = list(map(lambda x: x.value,sim.strategies))
+    print(sim.friendliness)
+    axs[0,1].set_title("Friendliness")
+    strats = np.array(list(map(lambda x: x.value,sim.strategies)))
+    occ = np.array(sim.occupied)
+    strats[occ==0] = -1
+    colorsList = ['#bcbcbc','#ffd966','#a10d0d']
+    plot_matrix(axs[1, 0], strats, False, vmin=-1, vmax=1, cmap=col.ListedColormap(colorsList))
     axs[1,0].set_title("Strategy")
-    plot_matrix(axs[1, 0], strats, vmin=0, vmax=1, cmap=plt.cm.YlOrRd)
-    axs[1,1].set_title("occupied")
-    plot_matrix(axs[1, 1], sim.occupied, vmin=0, vmax=1, cmap=plt.cm.Greys)
+    plot_matrix(axs[1, 1], sim.occupied, False, vmin=0, vmax=1, cmap=plt.cm.Greys)
+    axs[1,1].set_title("Occupied")
 
-def plot_matrix(ax: plt.axis, arr, **kwargs):
+def plot_matrix(ax: plt.axis, arr, disp_values=True, **kwargs):
     # Only works for rectangular grid
     # For general graphs we need different visualisation
     matrix = np.array(arr)
@@ -22,10 +27,11 @@ def plot_matrix(ax: plt.axis, arr, **kwargs):
     matrix.resize(n, n)
     ax.clear()
     ax.matshow(matrix, **kwargs)
-    for i in range(n):
-        for j in range(n):
-            c = matrix[j,i]
-            ax.text(i, j, str(c), va='center', ha='center')
+    if disp_values:
+        for i in range(n):
+            for j in range(n):
+                c = np.format_float_positional(matrix[j,i], precision=1)
+                ax.text(i, j, c, va='center', ha='center')
 
 def rectangular_graph(n, m) -> nx.Graph:
     """

@@ -113,10 +113,10 @@ class Simulation:
 
     def step(self):
         """ Perform one simulation step """
-        # (always for every player)
-        for v in self.graph:
-            if not self.occupied[v]: continue
-            self.choose_strategy(v)
+
+        # 
+        # STRATEGY
+        # 
 
         # Update payoff (sum (for each neighbor based on interaction))
         for v in self.graph:
@@ -125,12 +125,10 @@ class Simulation:
             own_strat = self.strategies[v]
             self.payoff[v] = sum(self.payoff_matrix[own_strat][self.strategies[u]] for u in self.graph[v] if self.occupied[u])
 
-        ####################################################
-        # TODO Reproduction & Mutation not yet working
-        # Update reproductive fitness
-        reproductive_fitness = [self.fitness(v) for v in self.graph]
+        # 
+        # DEATH
+        # 
 
-        # Let some individuals die
         dead_sites = []
         for v in self.graph:
             if not self.occupied[v]: continue
@@ -141,8 +139,9 @@ class Simulation:
 
         # all individuals that die are replaced by an offspring of surving to ensure constant population size
 
-        # Reproduce
-        # Friendliness of offsprings mutate
+        #
+        # REPRODUCTION
+        #
         empty_sites = np.array([v for v in self.graph if not self.occupied[v]])
 
         # choose the sites that will reproduce
@@ -150,7 +149,7 @@ class Simulation:
         reproduction_probability = [self.fitness(v) for v in alive]
         parents, number_offsprings = np.unique(np.random.choice(alive, len(dead_sites), reproduction_probability), return_counts=True)
 
-        offsprings = np.array()
+        offsprings = np.array([], dtype=int)
         for parent, n_offsprings in zip(parents, number_offsprings):
             # compute amount of local offsprings
             n_local_offsprings = np.random.binomial(n_offsprings, self.local_reproduction)
@@ -175,13 +174,17 @@ class Simulation:
             for x in randoms:
                 self.friendliness[x] = self.friendliness[parent]
 
-            offsprings = np.concatenate(offsprings, locals, randoms)
+            offsprings = np.concatenate((offsprings, locals, randoms))
 
+        offsprings = offsprings.astype(int)
         # update occupied
         for x in offsprings:
             self.occupied[x] = 1
         
-        # set friendliness values
+        # 
+        # MUTATION
+        # 
+
         for o in offsprings:
             # check if mutation
             if (random.uniform(0, 1) <= self.mutation):
