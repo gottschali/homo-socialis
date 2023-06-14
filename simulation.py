@@ -2,6 +2,7 @@ from enum import Enum
 import random
 import networkx as nx
 import typing
+import numpy as np
 
 Probability = float # in interval [0, 1]
 
@@ -142,18 +143,55 @@ class Simulation:
 
         # Reproduce
         # Friendliness of offsprings mutate
-        empty_sites = [v for v in self.graph if not self.occupied[v]]
+        empty_sites = np.array([v for v in self.graph if not self.occupied[v]])
 
-        # produce offspring proportionally to payoff in last round (according to fitness I guess)
-        # offspring move to closest empty site (probability v local reproduction)
-        # with (1-v) move to randomly selected site
-        # inherit friendliness except
-        # with mu = 0.05 it mutates
-        #  0.8 reset to uniform random [0, friendliness_of_parent]
-        #  0.2  uniform random [friendliness_of_parent, 1]
+        # choose the sites that will reproduce
+        alive = np.nonzero(self.occupied)[0]
+        reproduction_probability = [self.fitness(v) for v in alive]
+        parents, number_offsprings = np.unique(np.random.choice(alive, len(dead_sites), reproduction_probability), return_counts=True)
 
-        # for site in dead_sites:
-            # new_site = random.choice(self.neighbors(self.grid, x, y) if random.random() < self.local_reproduction else empty_sites)
-            # friendliness = random.random() * parent_friendliness if random.random() < 0.8 else friendliness_of_parent + (random.random() / (1-friendliness_of_parent))
+        offsprings = np.array()
+        for parent, n_offsprings in zip(parents, number_offsprings):
+            # compute amount of local offsprings
+            n_local_offsprings = np.random.binomial(n_offsprings, self.local_reproduction)
+            n_random_offsprings = n_offsprings - n_local_offsprings
+
+            # compute n_local_offsprings closest empty_sites
+            locals = nx.shortest_path_length(self.graph, parent)
+            locals = dict((k, locals[k]) for k in empty_sites)
+            locals = sorted(locals.keys(), key=lambda x:locals[x])
+            locals = locals[:n_local_offsprings]
+
+            # update empty_sites and friendliness
+            empty_sites = np.setdiff1d(empty_sites, locals)
+            for x in locals:
+                self.friendliness[x] = self.friendliness[parent]
+
+            # compute n_random_offsprings
+            randoms = np.random.choice(empty_sites, n_random_offsprings, replace=False)
+
+            # update empty_sites and friendliness
+            empty_sites = np.setdiff1d(empty_sites, randoms)
+            for x in randoms:
+                self.friendliness[x] = self.friendliness[parent]
+
+            offsprings = np.concatenate(offsprings, locals, randoms)
+
+        # update occupied
+        for x in offsprings:
+            self.occupied[x] = 1
+        
+        # set friendliness values
+        for o in offsprings:
+            # check if mutation
+            if (random.uniform(0, 1) <= self.mutation):
+                if self.friendliness[o] > 0.2: # if the parent was too friendly we reduce friendliness
+                    if (random.uniform(0, 1) <= 0.8):
+                        self.friendliness[o] = random.uniform(0, self.friendliness[o])
+                    else:
+                        self.friendliness[o] = random.uniform(self.friendliness[o], 1)
+                else: # if not, the friendliness is randomly generated
+                    self.friendliness[o] = random.uniform(0, 1)
+        # if no mutation the friendliness stays that of the parent
 
 
