@@ -1,0 +1,9 @@
+Discussion:
+
+1 - when should players chose a strategy:
+	- at the begining
+	- after deaths after deaths but before offsprings
+	- after deaths and offsprings
+
+2 - what should we do when the parent's friendliness is < 0.2
+    - in our code, we chose the offspring friendliness uniformly in [0; 1]
