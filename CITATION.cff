@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+title: 'homo_socialis_evolution '
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Joaquin
+    family-names: Castanon
+    email: jcastanon@student.ethz.ch
+repository-code: 'https://github.com/gottschali/homo-socialis/tree/main'
+abstract: >-
+  This software generates a simulation of the evolution of
+  agents. In the simulation, the agents chose between two
+  strategies in a prisoner dilemma type game. The agents can
+  either cooperate or defect with their neighbors to achieve
+  different amounts of resources which will in turn decide
+  their fitness to reproduce in the next generations. The
+  goal is to observe what strategy takes over, either
+  cooperating or defecting.
+date-released: '2023-06-16'
