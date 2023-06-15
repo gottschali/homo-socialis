@@ -62,7 +62,6 @@ class Simulation:
 
         self.occupation_frac = occupation_frac
         self.probability_of_death = p_death
-        self.initial_friendliness = initial_friendliness
         self.local_reproduction = local_reproduction
         self.mutation = mutation
 
@@ -118,10 +117,14 @@ class Simulation:
         # STRATEGY
         # 
 
-        # Update payoff (sum (for each neighbor based on interaction))
+        # compute strategies for every player
         for v in self.graph:
             if not self.occupied[v]: continue
             self.choose_strategy(v)
+
+        # Update payoff (sum (for each neighbor based on interaction))
+        for v in self.graph:
+            if not self.occupied[v]: continue
             own_strat = self.strategies[v]
             self.payoff[v] = sum(self.payoff_matrix[own_strat][self.strategies[u]] for u in self.graph[v] if self.occupied[u])
 
@@ -146,8 +149,9 @@ class Simulation:
 
         # choose the sites that will reproduce
         alive = np.nonzero(self.occupied)[0]
-        reproduction_probability = [self.fitness(v) for v in alive]
-        parents, number_offsprings = np.unique(np.random.choice(alive, len(dead_sites), reproduction_probability), return_counts=True)
+        reproduction_probability = np.maximum(0, [self.fitness(v) for v in alive])
+        reproduction_probability = reproduction_probability/np.sum(reproduction_probability)
+        parents, number_offsprings = np.unique(np.random.choice(alive, len(dead_sites), p=reproduction_probability), return_counts=True)
 
         offsprings = np.array([], dtype=int)
         for parent, n_offsprings in zip(parents, number_offsprings):
