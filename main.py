@@ -8,7 +8,6 @@ def show_simul(sim: Simulation, axs):
     plot_matrix(axs[0, 0], sim.payoff, vmin=0, vmax=10)
     axs[0,0].set_title("Payoff")
     plot_matrix(axs[0, 1], sim.friendliness, vmin=0, vmax=1)
-    print(sim.friendliness)
     axs[0,1].set_title("Friendliness")
     strats = np.array(list(map(lambda x: x.value,sim.strategies)))
     occ = np.array(sim.occupied)
