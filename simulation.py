@@ -192,13 +192,10 @@ class Simulation:
         for o in offsprings:
             # check if mutation
             if (random.uniform(0, 1) <= self.mutation):
-                if self.friendliness[o] > 0.2: # if the parent was too friendly we reduce friendliness
-                    if (random.uniform(0, 1) <= 0.8):
-                        self.friendliness[o] = random.uniform(0, self.friendliness[o])
-                    else:
-                        self.friendliness[o] = random.uniform(self.friendliness[o], 1)
-                else: # if not, the friendliness is randomly generated
-                    self.friendliness[o] = random.uniform(0, 1)
+                if (random.uniform(0, 1) <= 0.8):
+                    self.friendliness[o] = random.uniform(0, self.friendliness[o])
+                else:
+                    self.friendliness[o] = random.uniform(self.friendliness[o], 1)
         # if no mutation the friendliness stays that of the parent
 
 
