@@ -1,6 +1,7 @@
 from simulation import Simulation, Strategy
 import numpy as np
 from graphs import rectangular_graph
+import networkx as nx
 import matplotlib.pyplot as plt
 
 class Stats:
@@ -56,18 +57,23 @@ def avg_payoff_using_strat(sim: Simulation, strategy):
     return total_pay / n if n else 0
 
     
+def experiment():
+   G = nx.planted_partition_graph(10, 6, 0.9, 0.05) 
+   plot_graph(G)
+   sim = Simulation(G, occupation_frac=1.0)
+   plot(sim, 1000)
+   
+def plot_graph(G: nx.Graph):
+    nx.draw(G);
+    plt.show()
 
-
-def main():
+def plot(sim: Simulation, steps: int):
     stats = Stats([
         Stat("Share of Cooperation", share_of_cooperation),
         Stat("Average Friendliness", avg_friendliness),
         Stat("Average Payoff among Cooperators", lambda s : avg_payoff_using_strat(s, Strategy.cooperate)),
         Stat("Average Payoff among Defectors", lambda s : avg_payoff_using_strat(s, Strategy.defect)),
     ])
-    G = rectangular_graph(20, 20)
-    sim = Simulation(G, local_reproduction=1.0)
-    steps = 500
     generations = list(range(steps))
     for i in generations:
         print(f"Step {i} of simulation")
@@ -92,6 +98,12 @@ def main():
 
     fig.tight_layout()
     plt.show()
+
+def main():
+    # G = rectangular_graph(20, 20)
+    # sim = Simulation(G, local_reproduction=0.95)
+    # plot(sim, 500)
+    experiment()
 
 
 
