@@ -16,3 +16,17 @@ def rectangular_graph(n, m) -> nx.Graph:
                     v = ((y+j)%m) * n + ((x+i) % n)
                     G.add_edge(u, v)
     return G
+
+def four_neighbours_graph(n, m) -> nx.Graph:
+    """
+    Creates a m x n graph where every node is connected to its 4 nearest neighbors.
+    Periodic bounary condition (wrap around -> torus)
+    """
+    G = nx.Graph()
+    for y in range(m):
+        for x in range(n):
+            G.add_edge( y * n + x, ((y - 1) % m) * n + ((x + 0) % n))
+            G.add_edge( y * n + x, ((y - 0) % m) * n + ((x + 1) % n))
+            G.add_edge( y * n + x, ((y + 0) % m) * n + ((x - 1) % n))
+            G.add_edge( y * n + x, ((y + 1) % m) * n + ((x + 0) % n))
+    return G
