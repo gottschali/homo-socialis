@@ -101,7 +101,7 @@ class Simulation:
                 neighbor_payoff = self.payoff_matrix[Strategy.cooperate][strat] * cooperating_neighbors
                 own_payoff += self.payoff_matrix[strat][Strategy.defect] * defecting_neighbors
                 neighbor_payoff += self.payoff_matrix[Strategy.defect][strat] * defecting_neighbors
-                avg_neighbor_payoff = neighbor_payoff / num_neighbors
+                avg_neighbor_payoff = neighbor_payoff / num_neighbors if num_neighbors else 0
                 utility = (1-friendliness) * own_payoff + friendliness *  avg_neighbor_payoff
                 if utility >= running_utility:
                     running_utility = utility
@@ -164,7 +164,7 @@ class Simulation:
 
             # compute n_local_offsprings closest empty_sites
             locals = nx.shortest_path_length(self.graph, parent)
-            locals = dict((k, locals[k]) for k in empty_sites)
+            locals = dict((k, locals[k]) for k in empty_sites if k in locals)
             locals = sorted(locals.keys(), key=lambda x:locals[x])
             locals = locals[:n_local_offsprings]
 
