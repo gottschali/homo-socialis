@@ -4,7 +4,6 @@ from graphs import *
 import networkx as nx
 import matplotlib.pyplot as plt
 import itertools as it
-import time
 
 class Stats:
     
@@ -105,9 +104,17 @@ def reproduce():
     sim = Simulation(rectangular_graph(30, 30), local_reproduction=0.95)
     steps = 500
     # generation = int(steps / sim.probability_of_death)
-    plot(sim, steps, save=True)
+    plot(sim, steps, save_as=True)
+
+def different_degrees():
+    # Same number of nodes as before but now with different degree
+    deg = 20
+    G = nx.random_regular_graph(deg, 30 * 30)
+    sim = Simulation(G)
+    steps = 500
+    plot(sim, steps, save_as=f"random-degree-{deg}-steps-{steps}.png")
    
-def plot(sim: Simulation, steps: int, save=False):
+def plot(sim: Simulation, steps: int, save_as=False):
     stats = Stats([
         Stat("Share of Cooperation", share_of_cooperation),
         Stat("Average Friendliness", avg_friendliness),
@@ -138,14 +145,15 @@ def plot(sim: Simulation, steps: int, save=False):
     axs[1].legend()
 
     fig.tight_layout()
-    if save:
-        plt.savefig(f"figures/figure{time.ctime()}.png")
+    if save_as:
+        plt.savefig("figures/" + save_as)
     plt.show()
 
 def main():
-    reproduce()
+    # reproduce()
     # experiment()
     # vary_internal_cohesion_separation()
+    different_degrees()
 
 
 
