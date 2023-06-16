@@ -4,6 +4,7 @@ from graphs import *
 import networkx as nx
 import matplotlib.pyplot as plt
 import itertools as it
+import time
 
 class Stats:
     
@@ -106,11 +107,7 @@ def reproduce():
     # generation = int(steps / sim.probability_of_death)
     plot(sim, steps, save=True)
    
-def plot_graph(G: nx.Graph):
-    nx.draw(G)
-    plt.show()
-
-def plot(sim: Simulation, steps: int):
+def plot(sim: Simulation, steps: int, save=False):
     stats = Stats([
         Stat("Share of Cooperation", share_of_cooperation),
         Stat("Average Friendliness", avg_friendliness),
@@ -141,6 +138,8 @@ def plot(sim: Simulation, steps: int):
     axs[1].legend()
 
     fig.tight_layout()
+    if save:
+        plt.savefig(f"figures/figure{time.ctime()}.png")
     plt.show()
 
 def main():
