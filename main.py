@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as col
 import networkx as nx
-from graphs import rectangular_graph
+from graphs import *
 
 def show_simul(sim: Simulation, axs):
     plot_matrix(axs[0, 0], sim.payoff, vmin=0, vmax=10)

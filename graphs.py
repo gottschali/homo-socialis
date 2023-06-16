@@ -1,4 +1,7 @@
+import matplotlib.pyplot as plt
 import networkx as nx
+
+from graphs import nx
 
 def rectangular_graph(n, m) -> nx.Graph:
     """
@@ -30,3 +33,8 @@ def four_neighbours_graph(n, m) -> nx.Graph:
             G.add_edge( y * n + x, ((y + 0) % m) * n + ((x - 1) % n))
             G.add_edge( y * n + x, ((y + 1) % m) * n + ((x + 0) % n))
     return G
+
+
+def plot_graph(G: nx.Graph):
+    nx.draw(G)
+    plt.show()

@@ -1,6 +1,6 @@
 from simulation import Simulation, Strategy
 import numpy as np
-from graphs import rectangular_graph
+from graphs import *
 import networkx as nx
 import matplotlib.pyplot as plt
 import itertools as it
@@ -104,7 +104,7 @@ def reproduce():
     sim = Simulation(rectangular_graph(30, 30), local_reproduction=0.95)
     steps = 500
     # generation = int(steps / sim.probability_of_death)
-    plot(sim, steps)
+    plot(sim, steps, save=True)
    
 def plot_graph(G: nx.Graph):
     nx.draw(G)
