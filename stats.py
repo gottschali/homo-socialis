@@ -102,12 +102,12 @@ def vary_internal_cohesion_separation():
 
 def reproduce():
     sim = Simulation(rectangular_graph(30, 30), local_reproduction=0.95)
-    steps = 1000
+    steps = 500
     # generation = int(steps / sim.probability_of_death)
     plot(sim, steps)
    
 def plot_graph(G: nx.Graph):
-    nx.draw(G);
+    nx.draw(G)
     plt.show()
 
 def plot(sim: Simulation, steps: int):
@@ -119,9 +119,9 @@ def plot(sim: Simulation, steps: int):
     ])
     generations = list(range(steps))
     for i in generations:
-        print(f"Step {i} of simulation")
+        # print(f"Step {i} of simulation")
         stats.update(sim)
-        print(stats)
+        # print(stats)
         sim.step()
 
     # Plotting

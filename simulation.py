@@ -36,10 +36,10 @@ class Simulation:
                  initial_friendliness=0.0,
                  local_reproduction=0.9,
                  mutation: Probability = 0.2,
-                 temptation = 1.1,
-                 reward = 1,
+                 temptation = 0.51,
+                 reward = 0.5,
                  punishment = 0,
-                 sucker = -1,
+                 sucker = -0.05,
                  ):
         # Assume node ids are (0, 1, ..., N-1)
         self.graph = graph
@@ -80,7 +80,7 @@ class Simulation:
         the reproduction of agents who are exploited by all their neighbors
         """
         sucker = self.payoff_matrix[Strategy.cooperate][Strategy.defect]
-        return sum(self.payoff[u] for u in self.graph[v] if self.occupied[u]) - 8 * sucker
+        return self.payoff[v] - 8 * sucker
 
     def choose_strategy(self, v):
         # Maximize utility[i] = (1-friendliness[i]) * own_payoff + friendliness[i] *  avg(neighbor_payoff)
@@ -150,9 +150,12 @@ class Simulation:
         # choose the sites that will reproduce
         alive = np.nonzero(self.occupied)[0]
         reproduction_probability = np.maximum(0, [self.fitness(v) for v in alive])
-        reproduction_probability = reproduction_probability/np.sum(reproduction_probability)
-        parents, number_offsprings = np.unique(np.random.choice(alive, len(dead_sites), p=reproduction_probability), return_counts=True)
-
+        norm = np.sum(reproduction_probability)
+        if norm > 0:
+            reproduction_probability = reproduction_probability/np.sum(reproduction_probability)
+            parents, number_offsprings = np.unique(np.random.choice(alive, len(dead_sites), p=reproduction_probability), return_counts=True)
+        else:
+            parents, number_offsprings = np.unique(np.random.choice(alive, len(dead_sites)), return_counts=True)    
         offsprings = np.array([], dtype=int)
         for parent, n_offsprings in zip(parents, number_offsprings):
             # compute amount of local offsprings

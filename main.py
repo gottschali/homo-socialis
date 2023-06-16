@@ -35,9 +35,9 @@ def plot_matrix(ax: plt.axis, arr, disp_values=False, **kwargs):
 
 
 def main():
-    G = rectangular_graph(15, 15)
+    G = rectangular_graph(30, 30)
     sim = Simulation(G)
-    steps = 30
+    steps = 1000
     figs, axs = plt.subplots(2, 2)
     plt.subplots_adjust(hspace=0.4)
     show_simul(sim, axs)
